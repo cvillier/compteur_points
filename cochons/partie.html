@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<title>Jeu des cochons — Compte-Points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+  <h1>Jeu des cochons 🐖🐖</h1>
+
+  <div class="stack">
+
+    <div class="table-wrap">
+      <table class="scoreboard">
+        <thead>
+          <tr id="header-row">
+            <th>Tour</th>
+          </tr>
+        </thead>
+        <tbody id="score-body"></tbody>
+        <tfoot>
+          <tr id="total-row">
+            <td>Total</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <p id="final-round-banner" class="helper-text" hidden>🏁 Dernier tour pour tout le monde !</p>
+    <button id="start-turn-btn" class="btn" type="button"><span>C'est au tour de <strong id="start-turn-name"></strong></span></button>
+
+  </div>
+
+  <button id="menu-btn" class="btn-outline btn-block" type="button">Menu principal</button>
+
+  <div id="quit-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <p class="modal-question">Êtes-vous sûr de vouloir quitter la partie en cours ?</p>
+      <div class="modal-actions">
+        <button id="quit-no" class="btn-outline btn-outline-success">NON 😊</button>
+        <button id="quit-yes" class="btn btn-danger">OUI 😣</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="turn-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <button id="turn-modal-close" class="modal-close" type="button" aria-label="Fermer">❌</button>
+      <div class="turn-info">
+        <p id="turn-indicator" class="turn-indicator">Au tour de <strong></strong></p>
+        <p class="turn-indicator">Lancers de ce tour : <strong id="turn-throws-value">0</strong></p>
+        <p class="turn-indicator">Points de ce tour : <strong id="turn-score-value">0</strong><br>Total si vous vous arrêtez : <strong id="stop-total-value">0</strong></p>
+      </div>
+
+      <div class="combo-grid">
+        <button class="btn" data-combo="bons-flancs" type="button">
+          <span class="combo-img-pair">
+            <img class="combo-img" src="images/flanc-droit.png" alt="">
+            <img class="combo-img" src="images/flanc-droit.png" alt="">
+          </span>
+          <span>Bons flancs</span>
+        </button>
+        <button class="btn" data-combo="mauvais-flancs" type="button">
+          <span class="combo-img-pair">
+            <img class="combo-img" src="images/flanc-droit.png" alt="">
+            <img class="combo-img" src="images/flanc-gauche.png" alt="">
+          </span>
+          <span>Mauvais flancs</span>
+        </button>
+        <button class="btn" data-combo="trotteur" type="button">
+          <img class="combo-img" src="images/trotteur.png" alt="">
+          <span>Trotteur</span>
+        </button>
+        <button class="btn" data-combo="tournedos" type="button">
+          <img class="combo-img" src="images/tournedos.png" alt="">
+          <span>Tournedos</span>
+        </button>
+        <button class="btn" data-combo="groin-groin" type="button">
+          <img class="combo-img" src="images/groin-groin.png" alt="">
+          <span>Groin-groin</span>
+        </button>
+        <button class="btn" data-combo="bajoue" type="button">
+          <img class="combo-img" src="images/bajoue.png" alt="">
+          <span>Bajoue</span>
+        </button>
+        <button class="btn" id="combi-btn" type="button">
+          <span class="combo-img-quad">
+            <span class="combo-img-pair">
+              <img class="combo-img" src="images/trotteur.png" alt="">
+              <img class="combo-img" src="images/trotteur.png" alt="">
+            </span>
+            <span class="combo-img-pair">
+              <img class="combo-img" src="images/trotteur.png" alt="">
+              <img class="combo-img" src="images/tournedos.png" alt="">
+            </span>
+          </span>
+          <span>Doubles et Combinaisons diverses</span>
+        </button>
+        <button class="btn btn-danger" id="touch-btn" type="button">
+          <img class="combo-img" src="images/touche.png" alt="">
+          <span>Touché !!!</span>
+        </button>
+      </div>
+
+      <button id="stop-btn" class="btn btn-success" type="button"><span>S'arrêter 🙅🏻‍♂️<br>et passer au suivant ➡️</span></button>
+    </div>
+  </div>
+
+  <div id="touch-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <p class="modal-question">Les cochons se touchent-ils ?</p>
+      <div class="modal-actions">
+        <button id="touch-no" class="btn-outline btn-outline-success">Les cochons ne se touchent pas 😇</button>
+        <button id="touch-yes" class="btn btn-danger">Les cochons se touchent bien 😬</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="combi-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <p class="modal-question">Combinaisons diverses</p>
+      <p class="helper-text">Sélectionnez les 2 positions, l'une après l'autre</p>
+
+      <div class="combo-grid">
+        <button class="btn" data-combi="trotteur" type="button">
+          <img class="combo-img" src="images/trotteur.png" alt="">
+          <span>Trotteur</span>
+        </button>
+        <button class="btn" data-combi="tournedos" type="button">
+          <img class="combo-img" src="images/tournedos.png" alt="">
+          <span>Tournedos</span>
+        </button>
+        <button class="btn" data-combi="groin-groin" type="button">
+          <img class="combo-img" src="images/groin-groin.png" alt="">
+          <span>Groin-groin</span>
+        </button>
+        <button class="btn" data-combi="bajoue" type="button">
+          <img class="combo-img" src="images/bajoue.png" alt="">
+          <span>Bajoue</span>
+        </button>
+      </div>
+
+      <button id="combi-cancel" class="btn-outline" type="button">Annuler</button>
+    </div>
+  </div>
+
+  <script src="../common.js"></script>
+  <script>
+    const players = JSON.parse(sessionStorage.getItem("cochons_players") || "[]");
+
+    if (players.length === 0) {
+      window.location.href = "selection-des-joueurs.html";
+    } else {
+      function newRound() {
+        return players.map(() => null);
+      }
+
+      const rounds = [newRound()];
+      let currentRound = 0;
+      let currentPlayer = 0;
+      let turnScore = 0;
+      let turnThrows = 0;
+
+      // Score threshold that starts the final round: once a player banks
+      // 100+ points, every other player gets exactly one last turn to try
+      // to catch up before the game ends.
+      const WIN_THRESHOLD = 100;
+      let finalTurnsLeft = null;
+
+      const STAT_KEYS = ["bajoue", "groin-groin", "bons-flancs", "trotteur", "tournedos", "touche", "mauvais-flancs"];
+      const gameStats = players.map(() => {
+        const stats = { throws: 0 };
+        STAT_KEYS.forEach(key => { stats[key] = 0; });
+        return stats;
+      });
+
+      const turnIndicator = document.querySelector("#turn-indicator strong");
+      const turnThrowsValue = document.getElementById("turn-throws-value");
+      const turnScoreValue = document.getElementById("turn-score-value");
+      const stopTotalValue = document.getElementById("stop-total-value");
+      const touchBtn = document.getElementById("touch-btn");
+      const stopBtn = document.getElementById("stop-btn");
+      const turnModal = document.getElementById("turn-modal");
+      const startTurnBtn = document.getElementById("start-turn-btn");
+      const startTurnName = document.getElementById("start-turn-name");
+      const finalRoundBanner = document.getElementById("final-round-banner");
+      const tableWrap = document.querySelector(".table-wrap");
+      const headerRow = document.getElementById("header-row");
+      const scoreBody = document.getElementById("score-body");
+      const totalRow = document.getElementById("total-row");
+
+      function totalFor(p) {
+        let total = 0;
+        rounds.forEach(round => {
+          const entry = round[p];
+          if (!entry) return;
+          if (entry.score === "RESET") {
+            total = 0;
+          } else if (typeof entry.score === "number") {
+            total += entry.score;
+          }
+        });
+        return total;
+      }
+
+      function renderHeader() {
+        headerRow.querySelectorAll("th:not(:first-child)").forEach(th => th.remove());
+        players.forEach((name, p) => {
+          const th = document.createElement("th");
+          th.textContent = name;
+          if (p === currentPlayer) th.classList.add("current-player");
+          headerRow.appendChild(th);
+        });
+      }
+
+      function renderBody() {
+        scoreBody.innerHTML = "";
+        rounds.forEach((round, r) => {
+          const tr = document.createElement("tr");
+
+          const roundLabel = document.createElement("td");
+          roundLabel.textContent = "Tour " + (r + 1);
+          tr.appendChild(roundLabel);
+
+          round.forEach((entry, p) => {
+            const td = document.createElement("td");
+            if (entry === null) {
+              td.textContent = "–";
+            } else {
+              const scoreLine = document.createElement("div");
+              if (entry.score === "RESET") {
+                scoreLine.textContent = "🔄 0";
+                td.classList.add("reset-cell");
+              } else {
+                scoreLine.textContent = entry.score;
+              }
+
+              const throwsLine = document.createElement("div");
+              throwsLine.className = "cell-throws";
+              throwsLine.textContent = entry.throws + (entry.throws > 1 ? " lancers" : " lancer");
+
+              td.append(scoreLine, throwsLine);
+            }
+            if (r === currentRound && p === currentPlayer) {
+              td.classList.add("current-cell");
+            }
+            tr.appendChild(td);
+          });
+
+          scoreBody.appendChild(tr);
+        });
+      }
+
+      function renderTotals() {
+        totalRow.querySelectorAll("td:not(:first-child)").forEach(td => td.remove());
+        players.forEach((name, p) => {
+          const td = document.createElement("td");
+          td.textContent = totalFor(p);
+          totalRow.appendChild(td);
+        });
+      }
+
+      function renderAll() {
+        turnIndicator.textContent = players[currentPlayer];
+        startTurnName.textContent = players[currentPlayer];
+        turnThrowsValue.textContent = turnThrows;
+        turnScoreValue.textContent = turnScore;
+        stopTotalValue.textContent = totalFor(currentPlayer) + turnScore;
+        finalRoundBanner.hidden = finalTurnsLeft === null;
+        renderHeader();
+        renderBody();
+        renderTotals();
+
+        // Keep the current round in view: pin the scroll to the bottom so
+        // only older rounds require scrolling up to be seen.
+        requestAnimationFrame(() => {
+          tableWrap.scrollTop = tableWrap.scrollHeight;
+        });
+      }
+
+      // Ends the current player's turn and banks `score` (a number, or
+      // "RESET") as this round's result before moving to the next player.
+      function finishTurn(score) {
+        touchBtn.disabled = false;
+        stopBtn.disabled = false;
+        turnModal.hidden = true;
+
+        rounds[currentRound][currentPlayer] = { score, throws: turnThrows };
+        turnScore = 0;
+        turnThrows = 0;
+
+        if (finalTurnsLeft === null) {
+          if (totalFor(currentPlayer) >= WIN_THRESHOLD) {
+            // Everyone else gets exactly one last turn to try to catch up.
+            finalTurnsLeft = players.length - 1;
+          }
+        } else {
+          finalTurnsLeft--;
+        }
+
+        if (finalTurnsLeft === 0) {
+          renderAll();
+          endGame();
+          return;
+        }
+
+        currentPlayer++;
+        if (currentPlayer >= players.length) {
+          currentPlayer = 0;
+          currentRound++;
+          rounds.push(newRound());
+        }
+
+        renderAll();
+      }
+
+      function endGame() {
+        const totals = players.map((name, p) => totalFor(p));
+        sessionStorage.setItem("cochons_results", JSON.stringify({
+          players,
+          totals,
+          stats: gameStats,
+        }));
+        window.location.href = "resultats.html";
+      }
+
+      // Base value from the reference card for a single pig position.
+      const COMBI_BASE_POINTS = { bajoue: 15, "groin-groin": 10, trotteur: 5, tournedos: 5 };
+
+      // One click = one full throw's result. Most combos just add to
+      // this turn's running score; "Mauvais flancs" busts the turn.
+      document.querySelectorAll(".combo-grid .btn[data-combo]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const combo = btn.dataset.combo;
+          turnThrows++;
+          gameStats[currentPlayer].throws++;
+
+          if (combo === "mauvais-flancs") {
+            // The two pigs landed on opposite flanks: bust. This turn's
+            // points are lost, but earlier turns' banked total is kept.
+            gameStats[currentPlayer][combo]++;
+            finishTurn(0);
+            return;
+          }
+
+          if (combo === "bons-flancs") {
+            gameStats[currentPlayer][combo] += 2;
+            turnScore += 1;
+            renderAll();
+            return;
+          }
+
+          // bajoue / groin-groin / trotteur / tournedos: base value.
+          gameStats[currentPlayer][combo]++;
+          turnScore += COMBI_BASE_POINTS[combo];
+          renderAll();
+        });
+      });
+
+      startTurnBtn.addEventListener("click", () => {
+        turnModal.hidden = false;
+      });
+
+      document.getElementById("turn-modal-close").addEventListener("click", () => {
+        turnModal.hidden = true;
+      });
+
+      stopBtn.addEventListener("click", () => {
+        finishTurn(turnScore);
+      });
+
+      const touchModal = document.getElementById("touch-modal");
+      touchBtn.addEventListener("click", () => {
+        touchModal.hidden = false;
+      });
+      document.getElementById("touch-no").addEventListener("click", () => {
+        touchModal.hidden = true;
+      });
+      document.getElementById("touch-yes").addEventListener("click", () => {
+        touchModal.hidden = true;
+        turnThrows++;
+        gameStats[currentPlayer].throws++;
+        gameStats[currentPlayer].touche++;
+        finishTurn("RESET");
+      });
+
+      // "Combinaisons diverses": pick the 2 positions the pigs landed in.
+      // Two different positions simply add up; the exact same position
+      // twice adds up too, then doubles (e.g. two "Bajoue" = (15+15)x2 = 60).
+      const combiModal = document.getElementById("combi-modal");
+      let combiPicks = [];
+
+      document.getElementById("combi-btn").addEventListener("click", () => {
+        turnThrows++;
+        gameStats[currentPlayer].throws++;
+        combiModal.hidden = false;
+      });
+
+      document.querySelectorAll("#combi-modal .btn[data-combi]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const combo = btn.dataset.combi;
+          combiPicks.push({ combo, btn });
+          gameStats[currentPlayer][combo]++;
+
+          if (combiPicks.length < 2) {
+            btn.classList.add("selected");
+            return;
+          }
+
+          const [first, second] = combiPicks;
+          first.btn.classList.remove("selected");
+          combiPicks = [];
+          combiModal.hidden = true;
+
+          const sum = COMBI_BASE_POINTS[first.combo] + COMBI_BASE_POINTS[second.combo];
+          turnScore += first.combo === second.combo ? sum * 2 : sum;
+          renderAll();
+        });
+      });
+
+      document.getElementById("combi-cancel").addEventListener("click", () => {
+        if (combiPicks.length === 1) {
+          combiPicks[0].btn.classList.remove("selected");
+          gameStats[currentPlayer][combiPicks[0].combo]--;
+        }
+        combiPicks = [];
+        combiModal.hidden = true;
+      });
+
+      const quitModal = document.getElementById("quit-modal");
+      document.getElementById("menu-btn").addEventListener("click", () => {
+        quitModal.hidden = false;
+      });
+      document.getElementById("quit-no").addEventListener("click", () => {
+        quitModal.hidden = true;
+      });
+      document.getElementById("quit-yes").addEventListener("click", () => {
+        window.location.href = "../index.html";
+      });
+
+      renderAll();
+    }
+  </script>
+
+</body>
+</html>

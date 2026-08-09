@@ -1,0 +1,787 @@
+:root {
+  --bg: #121212;
+  --surface: #1e1e1e;
+  --surface-hover: #292929;
+  --border: rgba(255, 255, 255, 0.16);
+  --on-bg: rgba(255, 255, 255, 0.87);
+  --on-bg-medium: rgba(255, 255, 255, 0.60);
+  --on-bg-disabled: rgba(255, 255, 255, 0.38);
+  --primary: #ffb74d;
+  --primary-dark: #e6a23c;
+  --on-primary: #1a1200;
+  --danger: #cf6679;
+  --danger-dark: #b3505f;
+  --success: #4caf50;
+  --success-dark: #3d8b40;
+  --ripple: rgba(255, 255, 255, 0.25);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* On mobile, 100vh includes the space hidden behind the collapsible
+     address bar, which pushes margin-top:auto elements (like the menu
+     button) below the actually-visible area. 100dvh tracks the real
+     visible viewport instead; older browsers just ignore this line and
+     keep the 100vh fallback above. */
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: "Roboto", "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--on-bg);
+  padding: max(2rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+}
+
+h1 {
+  text-align: center;
+  font-size: clamp(1.5rem, 6vw, 2.6rem);
+  font-weight: 500;
+  letter-spacing: 0.25px;
+  margin: 0 0 2.5rem;
+  color: var(--on-bg);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 2rem;
+}
+
+.stack-wide {
+  max-width: 960px;
+}
+
+/* Pinned to the bottom of the viewport (with a minimum gap above, via
+   .stack's margin-bottom) so it stays clearly apart from game controls. */
+#menu-btn {
+  width: 100%;
+  max-width: 420px;
+  margin-top: auto;
+}
+
+/* Material "contained" button (works on <button> and <a>) */
+.btn {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.9rem 1.5rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-align: center;
+  text-decoration: none;
+  color: var(--on-primary);
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
+  transition: box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.btn:hover {
+  background: var(--primary-dark);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.4);
+}
+
+.btn:active {
+  box-shadow: 0 5px 10px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.4);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--on-bg-disabled);
+  box-shadow: none;
+}
+
+.btn .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ripple);
+  transform: scale(0);
+  animation: ripple-anim 0.6s ease-out;
+  pointer-events: none;
+}
+
+@keyframes ripple-anim {
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+/* Material "outlined" button, for secondary actions */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.9rem 1.25rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--primary);
+  background: transparent;
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.2s ease;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 183, 77, 0.08);
+}
+
+.btn-outline:disabled {
+  cursor: not-allowed;
+  color: var(--on-bg-disabled);
+  border-color: var(--border);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* Material "outlined" text field */
+.text-field {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--on-bg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.text-field::placeholder {
+  color: var(--on-bg-medium);
+}
+
+.text-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.helper-text {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--on-bg-medium);
+  margin: -0.5rem 0 0;
+}
+
+#final-round-banner {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+/* Row pairing a text field with an action button (e.g. "add player") */
+.field-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.field-row .text-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.field-row .btn-outline {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+/* Ordered list of entries (players, etc.) */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.list[hidden] {
+  display: none;
+}
+
+/* Let the results page's stats table use the full width of its (wider)
+   container instead of the default .table-wrap cap, so fewer columns
+   need horizontal scrolling on larger screens. Still shrinks and
+   scrolls normally on narrow viewports since width stays 100%. */
+#stats-tab {
+  max-width: 100%;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.list-item-index {
+  flex: 0 0 auto;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--on-primary);
+  background: var(--primary);
+  border-radius: 50%;
+}
+
+.list-item-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: break-word;
+  font-size: 1rem;
+}
+
+/* Score row with a suggestions line: stack the main row (name + stepper)
+   above the preset chips, instead of the default single-row .list-item. */
+.list-item.score-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+
+.score-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.score-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Material "assist chip" */
+.chip-btn {
+  padding: 0.35rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--on-bg-medium);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.chip-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.chip-btn.chip-active {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.icon-btn {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--on-bg-medium);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.icon-btn:hover {
+  color: var(--danger);
+  background: rgba(207, 102, 121, 0.12);
+}
+
+.score-input {
+  flex: 0 0 auto;
+  width: 3.25rem;
+  padding: 0.5rem 0.25rem;
+  font-family: inherit;
+  font-size: 1rem;
+  text-align: center;
+  color: var(--on-bg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  /* Hide native spin buttons — replaced by .stepper-btn instead. */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.score-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.score-input::-webkit-outer-spin-button,
+.score-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Bigger standalone variant for the score-entry modal's main input */
+.score-input-big {
+  width: 100%;
+  padding: 0.9rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.score-input-medium {
+  width: 5.5rem;
+}
+
+.score-stepper {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.score-stepper .btn-outline {
+  flex: 1;
+  width: auto;
+}
+
+.cell-struck {
+  color: var(--on-bg-medium);
+  font-style: italic;
+  text-decoration: line-through;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+}
+
+/* Material "tonal" icon button, +1/-1 */
+.stepper-btn {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary);
+  background: rgba(255, 183, 77, 0.12);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.2s ease;
+}
+
+.stepper-btn:hover {
+  background: rgba(255, 183, 77, 0.22);
+}
+
+.stepper-btn:active {
+  background: rgba(255, 183, 77, 0.32);
+}
+
+.list-item-score {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.turn-indicator {
+  margin: 0;
+  text-align: center;
+  font-size: 1.05rem;
+  color: var(--on-bg-medium);
+}
+
+/* Compact stack for the "Au tour de / Lancers / Points" info block —
+   tighter than the modal's default gap between unrelated sections. */
+.turn-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.turn-indicator strong {
+  color: var(--primary);
+}
+
+/* Scoreboard table — once it outgrows this height, only the rows scroll
+   (header and total stay pinned) instead of the whole page scrolling. */
+.table-wrap {
+  width: 100%;
+  max-width: 720px;
+  max-height: 50vh;
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+/* Sits outside .stack (as its own body-level element) so it can use the
+   full page width instead of being capped at 420px, while staying
+   responsive on narrow screens. Needs its own margin since it isn't a
+   flex child benefiting from .stack's gap here. */
+.table-wrap.table-wrap-full {
+  max-width: 960px;
+  margin-bottom: 1.25rem;
+}
+
+.scoreboard {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  font-size: 0.95rem;
+}
+
+.scoreboard th,
+.scoreboard td {
+  padding: 0.6rem 0.9rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.scoreboard th:first-child,
+.scoreboard td:first-child {
+  text-align: left;
+  color: var(--on-bg-medium);
+  font-weight: 400;
+}
+
+/* Tables with no leading label column (e.g. 10.000's score table) —
+   keep the first player column styled the same as the others. */
+.scoreboard.no-label-column th:first-child,
+.scoreboard.no-label-column td:first-child {
+  text-align: center;
+  color: inherit;
+  font-weight: inherit;
+}
+
+.scoreboard thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 500;
+  background: var(--surface-hover);
+}
+
+.scoreboard th.current-player {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.scoreboard td.current-cell {
+  box-shadow: inset 0 0 0 2px var(--primary);
+  font-weight: 700;
+}
+
+.scoreboard td.reset-cell {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.cell-throws {
+  margin-top: 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--on-bg-medium);
+}
+
+.scoreboard tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--surface);
+  border-bottom: none;
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+}
+
+/* Grid of point-combination buttons */
+.combo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 360px;
+}
+
+.player-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.player-grid .btn {
+  width: auto;
+  flex: 0 1 auto;
+}
+
+/* Sits outside .stack (like .table-wrap-full) so a single row of player
+   buttons can span the table's width; flex-wrap still lets it fall back
+   to multiple rows on narrow screens instead of overflowing. */
+.player-grid.player-grid-full {
+  max-width: 960px;
+  margin-bottom: 2rem;
+}
+
+.points-positive {
+  color: var(--success);
+}
+
+.points-negative {
+  color: var(--danger);
+}
+
+.combo-grid #touch-btn {
+  grid-column: 1 / -1;
+}
+
+.combo-grid #combi-btn {
+  grid-column: 1 / -1;
+}
+
+.combo-grid .btn {
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 92px;
+  padding: 0.65rem 0.4rem;
+  font-size: 0.78rem;
+}
+
+.combo-img {
+  width: 48px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.combo-img-pair {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.combo-img-pair .combo-img {
+  width: 32px;
+  height: 28px;
+}
+
+.combo-img-quad {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* First pig picked this turn, waiting on the second */
+.combo-grid .btn.selected {
+  background: var(--primary-dark);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.85);
+}
+
+/* Confirmation dialog */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+/* Closes the dialog without acting on it — for windows that don't
+   already have their own explicit "cancel" button. */
+.modal-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--danger);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(207, 102, 121, 0.12);
+}
+
+.modal-question {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.btn-outline-success {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.btn-outline-success:hover {
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.btn-success {
+  background: var(--success);
+  color: #ffffff;
+}
+
+.btn-success:hover {
+  background: var(--success-dark);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background: var(--danger-dark);
+}
+
+.tabs {
+  display: flex;
+  width: 100%;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--on-bg-medium);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+@media (max-width: 380px) {
+  h1 {
+    margin-bottom: 2rem;
+  }
+
+  .stack {
+    gap: 1rem;
+  }
+
+  .btn, .btn-outline {
+    padding: 0.85rem 1.1rem;
+    font-size: 0.9rem;
+  }
+}

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<title>Résultats — Compte-Points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+  <h1>Partie terminée ! 🐖🐖</h1>
+
+  <div class="stack stack-wide">
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="score" type="button">Score</button>
+      <button class="tab-btn" data-tab="stats" type="button">Statistiques</button>
+    </div>
+
+    <ol id="score-tab" class="list"></ol>
+
+    <div id="stats-tab" class="table-wrap" hidden>
+      <table class="scoreboard">
+        <thead>
+          <tr>
+            <th>Joueur</th>
+            <th>Mauvais flancs</th>
+            <th>Bons flancs</th>
+            <th>Trotteur</th>
+            <th>Tournedos</th>
+            <th>Groin-groin</th>
+            <th>Bajoue</th>
+            <th>Touché</th>
+            <th>Lancers</th>
+            <th>Pts/lancer</th>
+          </tr>
+        </thead>
+        <tbody id="stats-body"></tbody>
+      </table>
+    </div>
+
+    <a href="selection-des-joueurs.html" class="btn-outline">Nouvelle partie 🔁</a>
+    <a href="../index.html" class="btn-outline">Retour au menu principal</a>
+
+  </div>
+
+  <script src="../common.js"></script>
+  <script>
+    const results = JSON.parse(sessionStorage.getItem("cochons_results") || "null");
+
+    if (!results) {
+      window.location.href = "selection-des-joueurs.html";
+    } else {
+      const { players, totals, stats } = results;
+
+      const scoreTab = document.getElementById("score-tab");
+      const statsBody = document.getElementById("stats-body");
+
+      const order = players.map((name, i) => i).sort((a, b) => totals[b] - totals[a]);
+      const medals = ["🏆 ", "🥈 ", "🥉 "];
+
+      order.forEach((p, rank) => {
+        const li = document.createElement("li");
+        li.className = "list-item";
+
+        const name = document.createElement("span");
+        name.className = "list-item-name";
+        name.textContent = (medals[rank] || "💩 ") + players[p];
+
+        const score = document.createElement("span");
+        score.className = "list-item-score";
+        score.textContent = totals[p];
+
+        li.append(name, score);
+        scoreTab.appendChild(li);
+      });
+
+      // Listed in player order here (not ranked) since the ranking
+      // is already shown in the "Score" tab.
+      players.forEach((name, p) => {
+        const s = stats[p];
+        const tr = document.createElement("tr");
+        const avg = s.throws > 0 ? (totals[p] / s.throws).toFixed(2) : "–";
+        [name, s["mauvais-flancs"], s["bons-flancs"], s.trotteur, s.tournedos, s["groin-groin"], s.bajoue, s.touche, s.throws, avg]
+          .forEach(value => {
+            const td = document.createElement("td");
+            td.textContent = value;
+            tr.appendChild(td);
+          });
+        statsBody.appendChild(tr);
+      });
+
+      document.querySelectorAll(".tab-btn").forEach(tabBtn => {
+        tabBtn.addEventListener("click", () => {
+          document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+          tabBtn.classList.add("active");
+          scoreTab.hidden = tabBtn.dataset.tab !== "score";
+          document.getElementById("stats-tab").hidden = tabBtn.dataset.tab !== "stats";
+        });
+      });
+    }
+  </script>
+
+</body>
+</html>

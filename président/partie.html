@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<title>Président vs Trouduc — Compte-Points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+  <h1>Président 👑 vs Trouduc 💩</h1>
+
+  <div class="table-wrap table-wrap-full">
+    <table class="scoreboard">
+      <thead>
+        <tr id="header-row">
+          <th>Manche</th>
+        </tr>
+      </thead>
+      <tbody id="score-body"></tbody>
+      <tfoot>
+        <tr id="total-row">
+          <td>Total</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="stack">
+
+    <p class="turn-indicator">Manche <strong id="round-number">1</strong></p>
+    <p class="helper-text">Cliquez sur les joueurs selon leur classement<br>(le 1er à terminer doit être cliqué en premier)</p>
+
+    <ol id="ranking-list" class="list"></ol>
+
+  </div>
+
+  <div id="player-grid" class="player-grid player-grid-full"></div>
+
+  <div class="stack">
+
+    <button id="undo-btn" class="btn-outline" type="button" disabled>↩️ Annuler le dernier clic</button>
+
+    <button id="finish-btn" class="btn btn-success" type="button">Terminer la partie 🏁</button>
+
+  </div>
+
+  <button id="menu-btn" class="btn-outline btn-block" type="button">Menu principal</button>
+
+  <div id="quit-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <p class="modal-question">Êtes-vous sûr de vouloir quitter la partie en cours ?</p>
+      <div class="modal-actions">
+        <button id="quit-no" class="btn-outline btn-outline-success">NON 😊</button>
+        <button id="quit-yes" class="btn btn-danger">OUI 😣</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../common.js"></script>
+  <script>
+    const players = JSON.parse(sessionStorage.getItem("president_players") || "[]");
+    const scores = JSON.parse(sessionStorage.getItem("president_scores") || "null");
+
+    if (players.length === 0 || !scores) {
+      window.location.href = "selection-des-joueurs.html";
+    } else {
+      const total = players.length;
+
+      // Same role-per-rank rule as the scores setup page.
+      function roleForRank(rank) {
+        if (rank === 1) return "Président 👑";
+        if (rank === total) return "Trou du cul 💩";
+        if (total >= 4 && rank === 2) return "Vice-Président";
+        if (total >= 4 && rank === total - 1) return "Vice-trou du cul";
+        return "Neutre";
+      }
+
+      const rounds = []; // { ranking: [playerIndex, ...], points: [n, ...] }
+      let currentRanking = [];
+
+      const headerRow = document.getElementById("header-row");
+      const scoreBody = document.getElementById("score-body");
+      const totalRow = document.getElementById("total-row");
+      const tableWrap = document.querySelector(".table-wrap");
+      const roundNumber = document.getElementById("round-number");
+      const rankingList = document.getElementById("ranking-list");
+      const playerGrid = document.getElementById("player-grid");
+      const undoBtn = document.getElementById("undo-btn");
+      const finishBtn = document.getElementById("finish-btn");
+
+      function totalFor(p) {
+        return rounds.reduce((sum, round) => sum + round.points[p], 0);
+      }
+
+      function renderHeader() {
+        headerRow.querySelectorAll("th:not(:first-child)").forEach(th => th.remove());
+        players.forEach(name => {
+          const th = document.createElement("th");
+          th.textContent = name;
+          headerRow.appendChild(th);
+        });
+      }
+
+      function renderBody() {
+        scoreBody.innerHTML = "";
+        rounds.forEach((round, r) => {
+          const tr = document.createElement("tr");
+
+          const roundLabel = document.createElement("td");
+          roundLabel.textContent = "Manche " + (r + 1);
+          tr.appendChild(roundLabel);
+
+          players.forEach((name, p) => {
+            const td = document.createElement("td");
+            const points = round.points[p];
+            const rank = round.ranking.indexOf(p) + 1;
+
+            const scoreLine = document.createElement("div");
+            scoreLine.textContent = points > 0 ? "+" + points : String(points);
+            if (points > 0) scoreLine.classList.add("points-positive");
+            if (points < 0) scoreLine.classList.add("points-negative");
+
+            const roleLine = document.createElement("div");
+            roleLine.className = "cell-throws";
+            roleLine.textContent = roleForRank(rank);
+
+            td.append(scoreLine, roleLine);
+            tr.appendChild(td);
+          });
+
+          scoreBody.appendChild(tr);
+        });
+      }
+
+      function renderTotals() {
+        totalRow.querySelectorAll("td:not(:first-child)").forEach(td => td.remove());
+        players.forEach((name, p) => {
+          const td = document.createElement("td");
+          td.textContent = totalFor(p);
+          totalRow.appendChild(td);
+        });
+      }
+
+      function renderRanking() {
+        rankingList.innerHTML = "";
+        currentRanking.forEach((p, i) => {
+          const li = document.createElement("li");
+          li.className = "list-item";
+
+          const badge = document.createElement("span");
+          badge.className = "list-item-index";
+          badge.textContent = i + 1;
+
+          const label = document.createElement("span");
+          label.className = "list-item-name";
+          label.textContent = players[p];
+
+          const role = document.createElement("span");
+          role.className = "list-item-score";
+          role.textContent = roleForRank(i + 1);
+
+          li.append(badge, label, role);
+          rankingList.appendChild(li);
+        });
+
+        undoBtn.disabled = currentRanking.length === 0;
+      }
+
+      function renderPlayerGrid() {
+        playerGrid.innerHTML = "";
+        players.forEach((name, p) => {
+          if (currentRanking.includes(p)) return;
+
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.type = "button";
+          btn.textContent = name;
+          btn.addEventListener("click", () => {
+            currentRanking.push(p);
+            renderRanking();
+            renderPlayerGrid();
+
+            if (currentRanking.length === total) {
+              finishRound();
+            }
+          });
+          playerGrid.appendChild(btn);
+        });
+      }
+
+      function finishRound() {
+        const points = players.map((name, p) => {
+          const rank = currentRanking.indexOf(p) + 1;
+          return scores[roleForRank(rank)] || 0;
+        });
+        rounds.push({ ranking: currentRanking, points });
+        currentRanking = [];
+        renderAll();
+      }
+
+      function renderAll() {
+        roundNumber.textContent = rounds.length + 1;
+        renderHeader();
+        renderBody();
+        renderTotals();
+        renderRanking();
+        renderPlayerGrid();
+
+        requestAnimationFrame(() => {
+          tableWrap.scrollTop = tableWrap.scrollHeight;
+        });
+      }
+
+      undoBtn.addEventListener("click", () => {
+        currentRanking.pop();
+        renderRanking();
+        renderPlayerGrid();
+      });
+
+      finishBtn.addEventListener("click", () => {
+        const totals = players.map((name, p) => totalFor(p));
+
+        const roleCounts = players.map(() => ({}));
+        rounds.forEach(round => {
+          round.ranking.forEach((p, i) => {
+            const role = roleForRank(i + 1);
+            roleCounts[p][role] = (roleCounts[p][role] || 0) + 1;
+          });
+        });
+
+        sessionStorage.setItem("president_results", JSON.stringify({
+          players,
+          totals,
+          roleCounts,
+          roundsPlayed: rounds.length,
+        }));
+        window.location.href = "resultats.html";
+      });
+
+      const quitModal = document.getElementById("quit-modal");
+      document.getElementById("menu-btn").addEventListener("click", () => {
+        quitModal.hidden = false;
+      });
+      document.getElementById("quit-no").addEventListener("click", () => {
+        quitModal.hidden = true;
+      });
+      document.getElementById("quit-yes").addEventListener("click", () => {
+        window.location.href = "../index.html";
+      });
+
+      renderAll();
+    }
+  </script>
+
+</body>
+</html>

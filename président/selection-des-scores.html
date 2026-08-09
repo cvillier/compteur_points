@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<title>Président vs Trouduc — Compte-Points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+  <h1>Président 👑 vs Trouduc 💩</h1>
+
+  <div class="stack">
+
+    <p class="helper-text">Attribuez des points à chaque rôle de fin de manche</p>
+
+    <ol id="score-list" class="list"></ol>
+
+    <button id="start-btn" class="btn" type="button">Lancer la partie 🥳</button>
+
+  </div>
+
+  <button id="menu-btn" class="btn-outline btn-block" type="button">Menu principal</button>
+
+  <div id="quit-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <p class="modal-question">Êtes-vous sûr de vouloir quitter la partie en cours ?</p>
+      <div class="modal-actions">
+        <button id="quit-no" class="btn-outline btn-outline-success">NON 😊</button>
+        <button id="quit-yes" class="btn btn-danger">OUI 😣</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../common.js"></script>
+  <script>
+    const players = JSON.parse(sessionStorage.getItem("president_players") || "[]");
+
+    if (players.length === 0) {
+      window.location.href = "selection-des-joueurs.html";
+    } else {
+      const total = players.length;
+
+      // One score per ROLE, not per player rank — with 8 players there
+      // are still only 5 possible roles, and every "Neutre" player shares
+      // the same score. Which roles exist depends on the player count:
+      //  - 3 players  : Président, Neutre, Trou du cul
+      //  - 4 players  : Président, Vice-Président, Vice-trou du cul, Trou du cul
+      //  - 5+ players : Président, Vice-Président, Neutre, Vice-trou du cul, Trou du cul
+      function getRoles() {
+        if (total === 3) {
+          return ["Président 👑", "Neutre", "Trou du cul 💩"];
+        }
+        if (total === 4) {
+          return ["Président 👑", "Vice-Président", "Vice-trou du cul", "Trou du cul 💩"];
+        }
+        return ["Président 👑", "Vice-Président", "Neutre", "Vice-trou du cul", "Trou du cul 💩"];
+      }
+
+      const roles = getRoles();
+
+      // All roles start at 0 — pick a suggestion chip or type a value.
+      function defaultPoints() {
+        return 0;
+      }
+
+      const SUGGESTIONS = {
+        "Président 👑": [50, 10, 5, 3],
+        "Vice-Président": [25, 5, 2, 1],
+        "Neutre": [],
+        "Vice-trou du cul": [-25, -5, -2, -1],
+        "Trou du cul 💩": [-50, -10, -5, -3],
+      };
+
+      const scoreList = document.getElementById("score-list");
+      const inputs = [];
+
+      roles.forEach((role, index) => {
+        const li = document.createElement("li");
+        li.className = "list-item score-row";
+
+        const main = document.createElement("div");
+        main.className = "score-row-main";
+
+        const label = document.createElement("span");
+        label.className = "list-item-name";
+        label.textContent = role;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.className = "score-input";
+        input.step = "1";
+        input.value = defaultPoints(index);
+        inputs.push(input);
+
+        const minusBtn = document.createElement("button");
+        minusBtn.type = "button";
+        minusBtn.className = "stepper-btn";
+        minusBtn.textContent = "−";
+        minusBtn.setAttribute("aria-label", "Diminuer de 1 point pour " + role);
+        minusBtn.addEventListener("click", () => {
+          input.value = (Number(input.value) || 0) - 1;
+          syncChips();
+        });
+
+        const plusBtn = document.createElement("button");
+        plusBtn.type = "button";
+        plusBtn.className = "stepper-btn";
+        plusBtn.textContent = "+";
+        plusBtn.setAttribute("aria-label", "Augmenter de 1 point pour " + role);
+        plusBtn.addEventListener("click", () => {
+          input.value = (Number(input.value) || 0) + 1;
+          syncChips();
+        });
+
+        const stepper = document.createElement("div");
+        stepper.className = "stepper";
+        stepper.append(minusBtn, input, plusBtn);
+
+        main.append(label, stepper);
+        li.append(main);
+
+        const presets = SUGGESTIONS[role] || [];
+        let syncChips = () => {};
+
+        if (presets.length > 0) {
+          const suggestions = document.createElement("div");
+          suggestions.className = "score-suggestions";
+
+          const chips = presets.map(value => {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "chip-btn";
+            chip.textContent = value + " " + (Math.abs(value) === 1 ? "point" : "points");
+            chip.addEventListener("click", () => {
+              input.value = value;
+              syncChips();
+            });
+            suggestions.appendChild(chip);
+            return { value, chip };
+          });
+
+          syncChips = () => {
+            const current = Number(input.value);
+            chips.forEach(({ value, chip }) => {
+              chip.classList.toggle("chip-active", value === current);
+            });
+          };
+          input.addEventListener("input", syncChips);
+          syncChips();
+
+          li.append(suggestions);
+        }
+
+        scoreList.appendChild(li);
+      });
+
+      document.getElementById("start-btn").addEventListener("click", () => {
+        const scores = {};
+        roles.forEach((role, index) => {
+          scores[role] = Number(inputs[index].value) || 0;
+        });
+        sessionStorage.setItem("president_scores", JSON.stringify(scores));
+        window.location.href = "partie.html";
+      });
+
+      const quitModal = document.getElementById("quit-modal");
+      document.getElementById("menu-btn").addEventListener("click", () => {
+        quitModal.hidden = false;
+      });
+      document.getElementById("quit-no").addEventListener("click", () => {
+        quitModal.hidden = true;
+      });
+      document.getElementById("quit-yes").addEventListener("click", () => {
+        window.location.href = "../index.html";
+      });
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<title>10.000 — Compte-Points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+  <h1>10.000 🎲🎲🎲🎲🎲</h1>
+
+  <div class="table-wrap table-wrap-full">
+    <table class="scoreboard no-label-column">
+      <thead>
+        <tr id="header-row"></tr>
+      </thead>
+      <tbody id="score-body"></tbody>
+    </table>
+  </div>
+
+  <div class="stack">
+
+    <p id="final-round-banner" class="helper-text" hidden>🏁 Dernier tour pour tout le monde !</p>
+    <button id="start-turn-btn" class="btn" type="button"><span>C'est au tour de <strong id="start-turn-name"></strong></span></button>
+
+  </div>
+
+  <button id="menu-btn" class="btn-outline btn-block" type="button">Menu principal</button>
+
+  <div id="quit-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <p class="modal-question">Êtes-vous sûr de vouloir quitter la partie en cours ?</p>
+      <div class="modal-actions">
+        <button id="quit-no" class="btn-outline btn-outline-success">NON 😊</button>
+        <button id="quit-yes" class="btn btn-danger">OUI 😣</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="score-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <button id="score-modal-close" class="modal-close" type="button" aria-label="Fermer">❌</button>
+      <p class="turn-indicator">Score de <strong id="score-modal-name"></strong></p>
+
+      <input type="number" id="score-input" class="score-input score-input-big" step="100" value="100" min="0">
+
+      <div class="score-stepper">
+        <button type="button" class="btn-outline" id="score-minus-100">−100</button>
+        <button type="button" class="btn-outline" id="score-plus-100">+100</button>
+      </div>
+
+      <button type="button" class="btn-outline btn-block" data-preset="1000">1000</button>
+      <button type="button" class="btn-outline btn-block" data-preset="500">500</button>
+      <button type="button" class="btn-outline btn-block" data-preset="200">200</button>
+
+      <button id="no-score-btn" class="btn btn-danger" type="button">Aucun point empoché ☠️</button>
+      <button id="score-validate-btn" class="btn" type="button">Valider ✅</button>
+    </div>
+  </div>
+
+  <div id="invalid-score-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <p class="modal-question">Score invalide</p>
+      <p class="helper-text">Les scores doivent être des multiples de 100 (pas de dizaines ni d'unités).</p>
+      <button id="invalid-score-ok" class="btn" type="button">Compris ✅</button>
+    </div>
+  </div>
+
+  <script src="../common.js"></script>
+  <script>
+    const players = JSON.parse(sessionStorage.getItem("dixmille_players") || "[]");
+    const config = JSON.parse(sessionStorage.getItem("dixmille_scores") || "null");
+
+    if (players.length === 0 || !config) {
+      window.location.href = "selection-des-joueurs.html";
+    } else {
+      function newRound() {
+        return players.map(() => null);
+      }
+
+      const rounds = [newRound()];
+      let currentRound = 0;
+      let currentPlayer = 0;
+
+      let finalTurnsLeft = null;
+      let leadTotal = 0;
+
+      const headerRow = document.getElementById("header-row");
+      const scoreBody = document.getElementById("score-body");
+      const tableWrap = document.querySelector(".table-wrap");
+      const finalRoundBanner = document.getElementById("final-round-banner");
+      const startTurnBtn = document.getElementById("start-turn-btn");
+      const startTurnName = document.getElementById("start-turn-name");
+      const scoreModal = document.getElementById("score-modal");
+      const scoreModalName = document.getElementById("score-modal-name");
+      const scoreInput = document.getElementById("score-input");
+
+      // Sequence of valid running totals a player has had over the game
+      // (skipping struck entries) — used to detect score collisions.
+      function historicalTotals(p) {
+        const seen = [];
+        rounds.forEach(round => {
+          const cell = round[p];
+          if (cell && cell.kind === "normal" && !cell.struck) seen.push(cell.total);
+        });
+        return seen;
+      }
+
+      function totalFor(p) {
+        const seen = historicalTotals(p);
+        return seen.length ? seen[seen.length - 1] : 0;
+      }
+
+      // The specific cell object holding the player's currently-valid
+      // score, if any. Each cell keeps its own skull count (cell.skulls),
+      // so a bust always adds to whichever score is *currently* active —
+      // and if an older score becomes active again later (after the one
+      // above it gets struck), it simply resumes from its own count.
+      function findLatestValidCell(p) {
+        for (let r = rounds.length - 1; r >= 0; r--) {
+          const cell = rounds[r][p];
+          if (cell && cell.kind === "normal" && !cell.struck) return cell;
+        }
+        return null;
+      }
+
+
+      // Strikes the specific past entry that equals `value` — a score
+      // collision only invalidates that one milestone, not necessarily
+      // the player's current total (totals never repeat, so at most one
+      // entry can match).
+      function strikeCellWithTotal(p, value) {
+        for (let r = 0; r < rounds.length; r++) {
+          const cell = rounds[r][p];
+          if (cell && cell.kind === "normal" && !cell.struck && cell.total === value) {
+            cell.struck = true;
+            return;
+          }
+        }
+      }
+
+      function renderHeader() {
+        headerRow.innerHTML = "";
+        players.forEach((name, p) => {
+          const th = document.createElement("th");
+          th.textContent = name;
+          if (p === currentPlayer) th.classList.add("current-player");
+          headerRow.appendChild(th);
+        });
+      }
+
+      // Turns the round-by-round `rounds` grid (the source of truth for
+      // whose turn it is, collisions, etc.) into one independent list of
+      // *displayable* entries per player. A "normal" cell already carries
+      // its own live skull count (mutated directly in submitScore), so it
+      // just needs copying as-is. A bust with no target at all (score
+      // still at 0) doesn't start a new line either: consecutive ones
+      // collapse into one shared "0" row.
+      function buildDisplayColumns() {
+        return players.map((name, p) => {
+          const entries = [];
+
+          rounds.forEach(round => {
+            const cell = round[p];
+            // A rejected "not entered yet" attempt leaves no trace at all.
+            if (!cell || cell.kind === "blocked") return;
+            if (cell.kind === "skull") {
+              if (cell.hadTarget) return; // already reflected on its target cell
+              const last = entries[entries.length - 1];
+              if (last && last.kind === "skull-anchor") {
+                // Rule: no skull ever applies while a player's score is
+                // still 0, so this stays a plain, unmarked "0" line.
+              } else {
+                entries.push({ kind: "skull-anchor", total: 0, skulls: 0 });
+              }
+            } else {
+              entries.push({ ...cell });
+            }
+          });
+          return entries;
+        });
+      }
+
+      function renderBody() {
+        scoreBody.innerHTML = "";
+        const columns = buildDisplayColumns();
+        const rowCount = Math.max(0, ...columns.map(col => col.length));
+
+        // Highlight the current player's latest *still-valid* score, not
+        // just their last row (which could itself be a struck one).
+        let highlightRow = -1;
+        const currentColumn = columns[currentPlayer];
+        for (let i = currentColumn.length - 1; i >= 0; i--) {
+          if (!currentColumn[i].struck) { highlightRow = i; break; }
+        }
+
+        for (let r = 0; r < rowCount; r++) {
+          const tr = document.createElement("tr");
+
+          players.forEach((name, p) => {
+            const td = document.createElement("td");
+            const entry = columns[p][r];
+
+            if (!entry) {
+              td.textContent = "–";
+            } else {
+              td.textContent = entry.total + (entry.skulls ? " " + "☠️".repeat(entry.skulls) : "");
+              if (entry.struck) td.classList.add("cell-struck");
+            }
+
+            if (p === currentPlayer && r === highlightRow) {
+              td.classList.add("current-cell");
+            }
+            tr.appendChild(td);
+          });
+
+          scoreBody.appendChild(tr);
+        }
+      }
+
+      function renderAll() {
+        startTurnName.textContent = players[currentPlayer];
+        finalRoundBanner.hidden = finalTurnsLeft === null;
+        renderHeader();
+        renderBody();
+
+        requestAnimationFrame(() => {
+          tableWrap.scrollTop = tableWrap.scrollHeight;
+        });
+      }
+
+      function advance() {
+        currentPlayer++;
+        if (currentPlayer >= players.length) {
+          currentPlayer = 0;
+          currentRound++;
+          rounds.push(newRound());
+        }
+      }
+
+      function endGame() {
+        const totals = players.map((name, p) => totalFor(p));
+        const skullCounts = players.map(() => 0);
+        const struckCounts = players.map(() => 0);
+        rounds.forEach(round => {
+          round.forEach((cell, p) => {
+            if (!cell) return;
+            if (cell.kind === "skull") skullCounts[p]++;
+            if (cell.kind === "normal" && cell.struck) struckCounts[p]++;
+          });
+        });
+
+        sessionStorage.setItem("dixmille_results", JSON.stringify({
+          players,
+          totals,
+          skullCounts,
+          struckCounts,
+        }));
+        window.location.href = "resultats.html";
+      }
+
+      function recordTurn(cell) {
+        rounds[currentRound][currentPlayer] = cell;
+
+        if (cell.kind === "normal") {
+          const newTotal = totalFor(currentPlayer);
+          players.forEach((name, p) => {
+            if (p === currentPlayer) return;
+            if (historicalTotals(p).includes(newTotal)) {
+              strikeCellWithTotal(p, newTotal);
+            }
+          });
+        }
+
+        const currentTotal = totalFor(currentPlayer);
+        if (finalTurnsLeft === null) {
+          if (currentTotal >= config.target) {
+            // Everyone else gets exactly one last turn to try to catch up.
+            finalTurnsLeft = players.length - 1;
+            leadTotal = currentTotal;
+          }
+        } else if (cell.kind === "normal" && currentTotal > leadTotal) {
+          // Taking the lead during the final round resets it for everyone,
+          // including whoever triggered it in the first place.
+          leadTotal = currentTotal;
+          finalTurnsLeft = players.length - 1;
+        } else {
+          finalTurnsLeft--;
+        }
+
+        if (finalTurnsLeft === 0) {
+          renderAll();
+          endGame();
+          return;
+        }
+
+        advance();
+        renderAll();
+      }
+
+      startTurnBtn.addEventListener("click", () => {
+        scoreModalName.textContent = players[currentPlayer];
+        scoreInput.value = 100;
+        scoreModal.hidden = false;
+      });
+
+      document.getElementById("score-modal-close").addEventListener("click", () => {
+        scoreModal.hidden = true;
+      });
+
+      document.getElementById("score-minus-100").addEventListener("click", () => {
+        scoreInput.value = Math.max(0, (Number(scoreInput.value) || 0) - 100);
+      });
+      document.getElementById("score-plus-100").addEventListener("click", () => {
+        scoreInput.value = (Number(scoreInput.value) || 0) + 100;
+      });
+      document.querySelectorAll("#score-modal [data-preset]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          scoreInput.value = Number(btn.dataset.preset);
+        });
+      });
+
+      function submitScore(score) {
+        const p = currentPlayer;
+        let cell;
+
+        // Busting with nothing banked yet has nothing to lose, so the
+        // skull rule doesn't apply.
+        if (score === 0 && totalFor(p) === 0) {
+          cell = { kind: "skull", hadTarget: false };
+        } else if (score === 0) {
+          const target = findLatestValidCell(p);
+          target.skulls = (target.skulls || 0) + 1;
+          if (target.skulls === 3) target.struck = true;
+          cell = { kind: "skull", hadTarget: true };
+        } else if (totalFor(p) === 0 && score < config.entry) {
+          cell = { kind: "blocked", attempted: score };
+        } else {
+          cell = { kind: "normal", total: totalFor(p) + score, struck: false, skulls: 0 };
+        }
+
+        scoreModal.hidden = true;
+        recordTurn(cell);
+      }
+
+      const invalidScoreModal = document.getElementById("invalid-score-modal");
+
+      document.getElementById("score-validate-btn").addEventListener("click", () => {
+        const score = Math.max(0, Number(scoreInput.value) || 0);
+        if (score % 100 !== 0) {
+          invalidScoreModal.hidden = false;
+          return;
+        }
+        submitScore(score);
+      });
+
+      document.getElementById("invalid-score-ok").addEventListener("click", () => {
+        invalidScoreModal.hidden = true;
+      });
+
+      document.getElementById("no-score-btn").addEventListener("click", () => {
+        submitScore(0);
+      });
+
+      const quitModal = document.getElementById("quit-modal");
+      document.getElementById("menu-btn").addEventListener("click", () => {
+        quitModal.hidden = false;
+      });
+      document.getElementById("quit-no").addEventListener("click", () => {
+        quitModal.hidden = true;
+      });
+      document.getElementById("quit-yes").addEventListener("click", () => {
+        window.location.href = "../index.html";
+      });
+
+      renderAll();
+    }
+  </script>
+
+</body>
+</html>
