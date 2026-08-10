@@ -71,7 +71,15 @@
     </div>
   </div>
 
+  <div id="gif-modal" class="modal-backdrop" hidden>
+    <div class="modal-card gif-modal-card">
+      <p id="gif-modal-message" class="modal-question"></p>
+      <img id="gif-modal-img" class="gif-modal-img" src="" alt="">
+    </div>
+  </div>
+
   <script src="../common.js"></script>
+  <script src="images/durations.js"></script>
   <script>
     const players = JSON.parse(sessionStorage.getItem("dixmille_players") || "[]");
     const config = JSON.parse(sessionStorage.getItem("dixmille_scores") || "null");
@@ -129,6 +137,34 @@
         return null;
       }
 
+
+      // Shows a random GIF whenever a score gets struck, for exactly one
+      // loop of that GIF (capped at 6s so a long one can't stall the
+      // game). Chrome blocks reading a local file's raw bytes (XHR/fetch)
+      // from a file:// page via CORS, so the durations can't be measured
+      // at runtime — they're precomputed instead, in images/durations.js
+      // (regenerate that file whenever GIFs are added/removed/replaced).
+      const gifModal = document.getElementById("gif-modal");
+      const gifModalImg = document.getElementById("gif-modal-img");
+      const gifModalMessage = document.getElementById("gif-modal-message");
+      let gifHideTimer = null;
+
+      const GIF_DISPLAY_MAX_MS = 6000;
+      const GIF_DISPLAY_DEFAULT_MS = 3000; // used if a GIF has no known duration
+
+      function showRandomGif(message) {
+        const files = Object.keys(GIF_DURATIONS);
+        if (files.length === 0) return;
+
+        const filename = files[Math.floor(Math.random() * files.length)];
+        const shownMs = Math.min(GIF_DURATIONS[filename] || GIF_DISPLAY_DEFAULT_MS, GIF_DISPLAY_MAX_MS);
+
+        gifModalMessage.textContent = message;
+        gifModalImg.src = "images/" + filename;
+        gifModal.hidden = false;
+        clearTimeout(gifHideTimer);
+        gifHideTimer = setTimeout(() => { gifModal.hidden = true; }, shownMs);
+      }
 
       // Strikes the specific past entry that equals `value` — a score
       // collision only invalidates that one milestone, not necessarily
@@ -273,6 +309,7 @@
             if (p === currentPlayer) return;
             if (historicalTotals(p).includes(newTotal)) {
               strikeCellWithTotal(p, newTotal);
+              showRandomGif(players[currentPlayer] + " vient de rayer un des scores de " + players[p]);
             }
           });
         }
@@ -336,7 +373,10 @@
         } else if (score === 0) {
           const target = findLatestValidCell(p);
           target.skulls = (target.skulls || 0) + 1;
-          if (target.skulls === 3) target.struck = true;
+          if (target.skulls === 3) {
+            target.struck = true;
+            showRandomGif(players[p] + " vient de rayer un de ses scores");
+          }
           cell = { kind: "skull", hadTarget: true };
         } else if (totalFor(p) === 0 && score < config.entry) {
           cell = { kind: "blocked", attempted: score };
