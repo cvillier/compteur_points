@@ -68,7 +68,10 @@ h1 {
 
 /* Pinned to the bottom of the viewport (with a minimum gap above, via
    .stack's margin-bottom) so it stays clearly apart from game controls. */
-#menu-btn {
+/* Pinned to the bottom of the viewport (with a minimum gap above, via
+   .stack's margin-bottom) so it stays clearly apart from the rest of
+   the page — used for "Menu principal" and other bottom-anchored links. */
+.btn-pinned-bottom {
   width: 100%;
   max-width: 420px;
   margin-top: auto;
