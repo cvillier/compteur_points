@@ -149,15 +149,16 @@
       const gifModalMessage = document.getElementById("gif-modal-message");
       let gifHideTimer = null;
 
-      const GIF_DISPLAY_MAX_MS = 6000;
-      const GIF_DISPLAY_DEFAULT_MS = 3000; // used if a GIF has no known duration
+      const GIF_DISPLAY_MIN_MS = 3000; // short GIFs still get a proper look
+      const GIF_DISPLAY_MAX_MS = 6000; // long GIFs get cut off here
 
       function showRandomGif(message) {
         const files = Object.keys(GIF_DURATIONS);
         if (files.length === 0) return;
 
         const filename = files[Math.floor(Math.random() * files.length)];
-        const shownMs = Math.min(GIF_DURATIONS[filename] || GIF_DISPLAY_DEFAULT_MS, GIF_DISPLAY_MAX_MS);
+        const duration = GIF_DURATIONS[filename] || 0;
+        const shownMs = Math.min(Math.max(duration, GIF_DISPLAY_MIN_MS), GIF_DISPLAY_MAX_MS);
 
         gifModalMessage.textContent = message;
         gifModalImg.src = "images/" + filename;
