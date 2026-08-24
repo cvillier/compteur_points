@@ -66,7 +66,7 @@
 
       <p id="roll-result-text" class="modal-question"></p>
 
-      <button id="roll-again-btn" class="btn" type="button">Relancer 🎲</button>
+      <button id="roll-again-btn" class="btn" type="button">Lancer 🎲</button>
       <button id="stop-btn" class="btn btn-success" type="button"><span>S'arrêter 🙅🏻‍♂️<br>et passer au suivant ➡️</span></button>
     </div>
   </div>
@@ -370,6 +370,7 @@
 
         turnScore += points;
         rollResultText.textContent = label + " → +" + points + (points > 1 ? " points" : " point");
+        rollAgainBtn.textContent = "Relancer 🎲";
         rollAgainBtn.hidden = false;
         stopBtn.hidden = false;
         renderAll();
@@ -377,7 +378,13 @@
 
       startTurnBtn.addEventListener("click", () => {
         turnModal.hidden = false;
-        performRoll();
+        rollImg1.hidden = true;
+        rollImg2.hidden = true;
+        rollResultText.textContent = "";
+        rollAgainBtn.hidden = false;
+        rollAgainBtn.textContent = turnThrows === 0 ? "Lancer 🎲" : "Relancer 🎲";
+        stopBtn.hidden = turnThrows === 0;
+        renderAll();
       });
 
       rollAgainBtn.addEventListener("click", () => {
