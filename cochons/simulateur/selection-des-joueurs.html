@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../../style.css">
 </head>
 <body>
 
@@ -50,9 +50,9 @@
     </div>
   </div>
 
-  <script src="../common.js"></script>
+  <script src="../../common.js"></script>
   <script>
-    const players = JSON.parse(sessionStorage.getItem("cochons_players") || "[]");
+    const players = JSON.parse(sessionStorage.getItem("cochons_sim_players") || "[]");
 
     const form = document.getElementById("player-form");
     const nameInput = document.getElementById("player-name");
@@ -116,7 +116,7 @@
 
     startBtn.addEventListener("click", () => {
       if (startBtn.disabled) return;
-      sessionStorage.setItem("cochons_players", JSON.stringify(players));
+      sessionStorage.setItem("cochons_sim_players", JSON.stringify(players));
       window.location.href = "partie.html";
     });
 
@@ -128,7 +128,7 @@
       quitModal.hidden = true;
     });
     document.getElementById("quit-yes").addEventListener("click", () => {
-      window.location.href = "../index.html";
+      window.location.href = "../../index.html";
     });
 
     renderPlayers();

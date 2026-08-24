@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐖</text></svg>">
+<title>Jeu des cochons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+
+  <h1>Jeu des cochons 🐖🐖</h1>
+
+  <div class="stack">
+
+    <div class="table-wrap">
+      <table class="scoreboard">
+        <thead>
+          <tr id="header-row">
+            <th>Tour</th>
+          </tr>
+        </thead>
+        <tbody id="score-body"></tbody>
+        <tfoot>
+          <tr id="total-row">
+            <td>Total</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <p id="final-round-banner" class="helper-text" hidden>🏁 Dernier tour pour tout le monde !</p>
+    <button id="start-turn-btn" class="btn" type="button"><span>C'est au tour de <strong id="start-turn-name"></strong></span></button>
+
+  </div>
+
+  <button id="menu-btn" class="btn-outline btn-block btn-pinned-bottom" type="button">Menu principal</button>
+
+  <div id="quit-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <p class="modal-question">Êtes-vous sûr de vouloir quitter la partie en cours ?</p>
+      <div class="modal-actions">
+        <button id="quit-no" class="btn-outline btn-outline-success">NON 😊</button>
+        <button id="quit-yes" class="btn btn-danger">OUI 😣</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="turn-modal" class="modal-backdrop" hidden>
+    <div class="modal-card">
+      <button id="turn-modal-close" class="modal-close" type="button" aria-label="Fermer">❌</button>
+      <div class="turn-info">
+        <p id="turn-indicator" class="turn-indicator">Au tour de <strong></strong></p>
+        <p class="turn-indicator">Lancers de ce tour : <strong id="turn-throws-value">0</strong></p>
+        <p class="turn-indicator">Points de ce tour : <strong id="turn-score-value">0</strong><br>Total si vous vous arrêtez : <strong id="stop-total-value">0</strong></p>
+      </div>
+
+      <div class="roll-images">
+        <img id="roll-img-1" class="roll-img" src="" alt="">
+        <img id="roll-img-2" class="roll-img" src="" alt="">
+      </div>
+
+      <p id="roll-result-text" class="modal-question"></p>
+
+      <button id="roll-again-btn" class="btn" type="button">Relancer 🎲</button>
+      <button id="stop-btn" class="btn btn-success" type="button"><span>S'arrêter 🙅🏻‍♂️<br>et passer au suivant ➡️</span></button>
+    </div>
+  </div>
+
+  <script src="../../common.js"></script>
+  <script>
+    const players = JSON.parse(sessionStorage.getItem("cochons_sim_players") || "[]");
+
+    if (players.length === 0) {
+      window.location.href = "selection-des-joueurs.html";
+    } else {
+      function newRound() {
+        return players.map(() => null);
+      }
+
+      const rounds = [newRound()];
+      let currentRound = 0;
+      let currentPlayer = 0;
+      let turnScore = 0;
+      let turnThrows = 0;
+
+      // Score threshold that starts the final round: once a player banks
+      // 100+ points, every other player gets exactly one last turn to try
+      // to catch up before the game ends.
+      const WIN_THRESHOLD = 100;
+      let finalTurnsLeft = null;
+
+      const STAT_KEYS = ["bajoue", "groin-groin", "bons-flancs", "trotteur", "tournedos", "touche", "mauvais-flancs"];
+      const gameStats = players.map(() => {
+        const stats = { throws: 0 };
+        STAT_KEYS.forEach(key => { stats[key] = 0; });
+        return stats;
+      });
+
+      const turnIndicator = document.querySelector("#turn-indicator strong");
+      const turnThrowsValue = document.getElementById("turn-throws-value");
+      const turnScoreValue = document.getElementById("turn-score-value");
+      const stopTotalValue = document.getElementById("stop-total-value");
+      const stopBtn = document.getElementById("stop-btn");
+      const turnModal = document.getElementById("turn-modal");
+      const turnModalCloseBtn = document.getElementById("turn-modal-close");
+      const startTurnBtn = document.getElementById("start-turn-btn");
+      const startTurnName = document.getElementById("start-turn-name");
+      const finalRoundBanner = document.getElementById("final-round-banner");
+      const tableWrap = document.querySelector(".table-wrap");
+      const headerRow = document.getElementById("header-row");
+      const scoreBody = document.getElementById("score-body");
+      const totalRow = document.getElementById("total-row");
+      const rollImg1 = document.getElementById("roll-img-1");
+      const rollImg2 = document.getElementById("roll-img-2");
+      const rollResultText = document.getElementById("roll-result-text");
+      const rollAgainBtn = document.getElementById("roll-again-btn");
+
+      function totalFor(p) {
+        let total = 0;
+        rounds.forEach(round => {
+          const entry = round[p];
+          if (!entry) return;
+          if (entry.score === "RESET") {
+            total = 0;
+          } else if (typeof entry.score === "number") {
+            total += entry.score;
+          }
+        });
+        return total;
+      }
+
+      function renderHeader() {
+        headerRow.querySelectorAll("th:not(:first-child)").forEach(th => th.remove());
+        players.forEach((name, p) => {
+          const th = document.createElement("th");
+          th.textContent = name;
+          if (p === currentPlayer) th.classList.add("current-player");
+          headerRow.appendChild(th);
+        });
+      }
+
+      function renderBody() {
+        scoreBody.innerHTML = "";
+        rounds.forEach((round, r) => {
+          const tr = document.createElement("tr");
+
+          const roundLabel = document.createElement("td");
+          roundLabel.textContent = "Tour " + (r + 1);
+          tr.appendChild(roundLabel);
+
+          round.forEach((entry, p) => {
+            const td = document.createElement("td");
+            if (entry === null) {
+              td.textContent = "–";
+            } else {
+              const scoreLine = document.createElement("div");
+              if (entry.score === "RESET") {
+                scoreLine.textContent = "🔄 0";
+                td.classList.add("reset-cell");
+              } else {
+                scoreLine.textContent = entry.score;
+              }
+
+              const throwsLine = document.createElement("div");
+              throwsLine.className = "cell-throws";
+              throwsLine.textContent = entry.throws + (entry.throws > 1 ? " lancers" : " lancer");
+
+              td.append(scoreLine, throwsLine);
+            }
+            if (r === currentRound && p === currentPlayer) {
+              td.classList.add("current-cell");
+            }
+            tr.appendChild(td);
+          });
+
+          scoreBody.appendChild(tr);
+        });
+      }
+
+      function renderTotals() {
+        totalRow.querySelectorAll("td:not(:first-child)").forEach(td => td.remove());
+        players.forEach((name, p) => {
+          const td = document.createElement("td");
+          td.textContent = totalFor(p);
+          totalRow.appendChild(td);
+        });
+      }
+
+      function renderAll() {
+        turnIndicator.textContent = players[currentPlayer];
+        startTurnName.textContent = players[currentPlayer];
+        turnThrowsValue.textContent = turnThrows;
+        turnScoreValue.textContent = turnScore;
+        stopTotalValue.textContent = totalFor(currentPlayer) + turnScore;
+        finalRoundBanner.hidden = finalTurnsLeft === null;
+        renderHeader();
+        renderBody();
+        renderTotals();
+
+        // Keep the current round in view: pin the scroll to the bottom so
+        // only older rounds require scrolling up to be seen.
+        requestAnimationFrame(() => {
+          tableWrap.scrollTop = tableWrap.scrollHeight;
+        });
+      }
+
+      // Ends the current player's turn and banks `score` (a number, or
+      // "RESET") as this round's result before moving to the next player.
+      function finishTurn(score) {
+        clearTimeout(pendingRollTimer);
+        turnModalCloseBtn.disabled = false;
+        turnModal.hidden = true;
+
+        rounds[currentRound][currentPlayer] = { score, throws: turnThrows };
+        turnScore = 0;
+        turnThrows = 0;
+
+        if (finalTurnsLeft === null) {
+          if (totalFor(currentPlayer) >= WIN_THRESHOLD) {
+            // Everyone else gets exactly one last turn to try to catch up.
+            finalTurnsLeft = players.length - 1;
+          }
+        } else {
+          finalTurnsLeft--;
+        }
+
+        if (finalTurnsLeft === 0) {
+          renderAll();
+          endGame();
+          return;
+        }
+
+        currentPlayer++;
+        if (currentPlayer >= players.length) {
+          currentPlayer = 0;
+          currentRound++;
+          rounds.push(newRound());
+        }
+
+        renderAll();
+      }
+
+      function endGame() {
+        const totals = players.map((name, p) => totalFor(p));
+        sessionStorage.setItem("cochons_sim_results", JSON.stringify({
+          players,
+          totals,
+          stats: gameStats,
+        }));
+        window.location.href = "resultats.html";
+      }
+
+      // Base value from the reference card for a single pig position.
+      const COMBI_BASE_POINTS = { bajoue: 15, "groin-groin": 10, trotteur: 5, tournedos: 5 };
+
+      const RESULT_LABELS = {
+        bajoue: "Bajoue",
+        "groin-groin": "Groin-groin",
+        "flanc-droit": "Flanc droit",
+        "flanc-gauche": "Flanc gauche",
+        trotteur: "Trotteur",
+        tournedos: "Tournedos",
+      };
+      const RESULT_IMAGES = {
+        bajoue: "../images/bajoue.png",
+        "groin-groin": "../images/groin-groin.png",
+        "flanc-droit": "../images/flanc-droit.png",
+        "flanc-gauche": "../images/flanc-gauche.png",
+        trotteur: "../images/trotteur.png",
+        tournedos: "../images/tournedos.png",
+        touche: "../images/touche.png",
+      };
+      // Odds for a single pig's landing position (sums to exactly 100).
+      const RESULT_WEIGHTS = [
+        { key: "flanc-gauche", weight: 33 },
+        { key: "flanc-droit", weight: 33 },
+        { key: "tournedos", weight: 20 },
+        { key: "trotteur", weight: 7.9999 },
+        { key: "groin-groin", weight: 5 },
+        { key: "bajoue", weight: 1 },
+        { key: "touche", weight: 0.0001 },
+      ];
+      const RESULT_WEIGHTS_TOTAL = RESULT_WEIGHTS.reduce((sum, r) => sum + r.weight, 0);
+
+      const isFlank = x => x === "flanc-droit" || x === "flanc-gauche";
+
+      function pickWeightedResult() {
+        let roll = Math.random() * RESULT_WEIGHTS_TOTAL;
+        for (const { key, weight } of RESULT_WEIGHTS) {
+          if (roll < weight) return key;
+          roll -= weight;
+        }
+        return RESULT_WEIGHTS[RESULT_WEIGHTS.length - 1].key; // float-rounding fallback
+      }
+
+      // Each pig figurine lands independently; if either lands "touché",
+      // the pair is touching and it's a touché for the whole throw.
+      function rollDice() {
+        const a = pickWeightedResult();
+        const b = pickWeightedResult();
+        if (a === "touche" || b === "touche") return { touche: true };
+        return { a, b };
+      }
+
+      let pendingRollTimer = null;
+
+      // Simulates one throw of both pig figurines and shows the result.
+      // Normal combos leave the turn open (relancer / s'arrêter); a bust
+      // or a touché ends the turn automatically after a short pause.
+      function performRoll() {
+        turnThrows++;
+        gameStats[currentPlayer].throws++;
+
+        const roll = rollDice();
+
+        if (roll.touche) {
+          // touche.png already shows both pigs together — one image is enough.
+          rollImg1.src = RESULT_IMAGES.touche;
+          rollImg1.hidden = false;
+          rollImg2.hidden = true;
+          rollResultText.textContent = "Touché !!! — Score remis à zéro ☠️";
+          gameStats[currentPlayer].touche++;
+          rollAgainBtn.hidden = true;
+          stopBtn.hidden = true;
+          turnModalCloseBtn.disabled = true;
+          renderAll();
+          pendingRollTimer = setTimeout(() => finishTurn("RESET"), 2000);
+          return;
+        }
+
+        const { a, b } = roll;
+        rollImg1.src = RESULT_IMAGES[a];
+        rollImg2.src = RESULT_IMAGES[b];
+        rollImg1.hidden = false;
+        rollImg2.hidden = false;
+
+        if (isFlank(a) && isFlank(b) && a !== b) {
+          rollResultText.textContent = "Flancs opposés — Tour perdu 😬";
+          gameStats[currentPlayer]["mauvais-flancs"]++;
+          rollAgainBtn.hidden = true;
+          stopBtn.hidden = true;
+          turnModalCloseBtn.disabled = true;
+          renderAll();
+          pendingRollTimer = setTimeout(() => finishTurn(0), 2000);
+          return;
+        }
+
+        let points, label;
+        if (isFlank(a) && isFlank(b) && a === b) {
+          points = 1;
+          label = "Bons flancs";
+          gameStats[currentPlayer]["bons-flancs"] += 2;
+        } else if (a === b) {
+          points = COMBI_BASE_POINTS[a] * 4;
+          label = RESULT_LABELS[a] + " (double)";
+          gameStats[currentPlayer][a] += 2;
+        } else {
+          const pa = COMBI_BASE_POINTS[a] || 0;
+          const pb = COMBI_BASE_POINTS[b] || 0;
+          points = pa + pb;
+          label = RESULT_LABELS[a] + " + " + RESULT_LABELS[b];
+          if (COMBI_BASE_POINTS.hasOwnProperty(a)) gameStats[currentPlayer][a]++;
+          if (COMBI_BASE_POINTS.hasOwnProperty(b)) gameStats[currentPlayer][b]++;
+        }
+
+        turnScore += points;
+        rollResultText.textContent = label + " → +" + points + (points > 1 ? " points" : " point");
+        rollAgainBtn.hidden = false;
+        stopBtn.hidden = false;
+        renderAll();
+      }
+
+      startTurnBtn.addEventListener("click", () => {
+        turnModal.hidden = false;
+        performRoll();
+      });
+
+      rollAgainBtn.addEventListener("click", () => {
+        performRoll();
+      });
+
+      turnModalCloseBtn.addEventListener("click", () => {
+        turnModal.hidden = true;
+      });
+
+      stopBtn.addEventListener("click", () => {
+        finishTurn(turnScore);
+      });
+
+      const quitModal = document.getElementById("quit-modal");
+      document.getElementById("menu-btn").addEventListener("click", () => {
+        quitModal.hidden = false;
+      });
+      document.getElementById("quit-no").addEventListener("click", () => {
+        quitModal.hidden = true;
+      });
+      document.getElementById("quit-yes").addEventListener("click", () => {
+        window.location.href = "../../index.html";
+      });
+
+      renderAll();
+    }
+  </script>
+
+</body>
+</html>
