@@ -287,6 +287,12 @@
       ];
       const RESULT_WEIGHTS_TOTAL = RESULT_WEIGHTS.reduce((sum, r) => sum + r.weight, 0);
 
+      // Purely decorative pool used for the spinning animation before a
+      // roll settles — no relation to the real odds above.
+      const SPIN_IMAGE_KEYS = Object.keys(RESULT_IMAGES);
+      const SPIN_TICKS = 8;
+      const SPIN_INTERVAL_MS = 80;
+
       const isFlank = x => x === "flanc-droit" || x === "flanc-gauche";
 
       function pickWeightedResult() {
@@ -308,11 +314,45 @@
       }
 
       let pendingRollTimer = null;
+      let spinTimer = null;
+
+      // Kicks off the "rolling" animation — the two images flicker through
+      // random candidates for a short moment before the real result (already
+      // determined by the game logic in resolveRoll) is revealed.
+      function performRoll() {
+        rollAgainBtn.disabled = true;
+        stopBtn.disabled = true;
+        turnModalCloseBtn.disabled = true;
+        rollResultText.textContent = "";
+        rollImg1.hidden = false;
+        rollImg2.hidden = false;
+        rollImg1.classList.remove("landed");
+        rollImg2.classList.remove("landed");
+        rollImg1.classList.add("spinning");
+        rollImg2.classList.add("spinning");
+
+        let ticks = 0;
+        spinTimer = setInterval(() => {
+          rollImg1.src = RESULT_IMAGES[SPIN_IMAGE_KEYS[Math.floor(Math.random() * SPIN_IMAGE_KEYS.length)]];
+          rollImg2.src = RESULT_IMAGES[SPIN_IMAGE_KEYS[Math.floor(Math.random() * SPIN_IMAGE_KEYS.length)]];
+          ticks++;
+          if (ticks >= SPIN_TICKS) {
+            clearInterval(spinTimer);
+            rollImg1.classList.remove("spinning");
+            rollImg2.classList.remove("spinning");
+            resolveRoll();
+          }
+        }, SPIN_INTERVAL_MS);
+      }
 
       // Simulates one throw of both pig figurines and shows the result.
       // Normal combos leave the turn open (relancer / s'arrêter); a bust
       // or a touché ends the turn automatically after a short pause.
-      function performRoll() {
+      function resolveRoll() {
+        rollAgainBtn.disabled = false;
+        stopBtn.disabled = false;
+        turnModalCloseBtn.disabled = false;
+
         turnThrows++;
         gameStats[currentPlayer].throws++;
 
@@ -322,6 +362,7 @@
           // touche.png already shows both pigs together — one image is enough.
           rollImg1.src = RESULT_IMAGES.touche;
           rollImg1.hidden = false;
+          rollImg1.classList.add("landed");
           rollImg2.hidden = true;
           rollResultText.textContent = "Touché !!! — Score remis à zéro ☠️";
           gameStats[currentPlayer].touche++;
@@ -338,6 +379,8 @@
         rollImg2.src = RESULT_IMAGES[b];
         rollImg1.hidden = false;
         rollImg2.hidden = false;
+        rollImg1.classList.add("landed");
+        rollImg2.classList.add("landed");
 
         if (isFlank(a) && isFlank(b) && a !== b) {
           rollResultText.textContent = "Flancs opposés — Tour perdu 😬";

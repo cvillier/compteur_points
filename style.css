@@ -661,6 +661,21 @@ h1 {
   object-fit: contain;
 }
 
+.roll-img.spinning {
+  opacity: 0.6;
+  filter: blur(1px);
+}
+
+.roll-img.landed {
+  animation: roll-pop 0.3s ease-out;
+}
+
+@keyframes roll-pop {
+  0% { transform: scale(0.7); opacity: 0.4; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* First pig picked this turn, waiting on the second */
 .combo-grid .btn.selected {
   background: var(--primary-dark);
