@@ -63,10 +63,10 @@
   <div id="score-modal" class="modal-backdrop" hidden>
     <div class="modal-card">
       <button id="score-modal-close" class="modal-close" type="button" aria-label="Fermer">❌</button>
-      <p class="turn-indicator">Score de ce tour pour <strong id="score-modal-name"></strong></p>
+      <p class="turn-indicator">Score de ce tour pour <strong id="score-modal-name"></strong><br>(⚠️ le score peut être négatif)</p>
 
       <form id="score-form">
-        <input type="number" id="score-input" class="score-input score-input-big" step="1" value="0">
+        <input type="number" id="score-input" class="score-input score-input-big" step="1">
 
         <button id="score-validate-btn" class="btn" type="submit">Valider ✅</button>
       </form>
@@ -194,8 +194,9 @@
 
       startTurnBtn.addEventListener("click", () => {
         scoreModalName.textContent = players[currentPlayer];
-        scoreInput.value = 0;
+        scoreInput.value = "";
         scoreModal.hidden = false;
+        scoreInput.focus();
       });
 
       document.getElementById("score-modal-close").addEventListener("click", () => {
