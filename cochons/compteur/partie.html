@@ -109,6 +109,7 @@
         </button>
       </div>
 
+      <button id="undo-btn" class="btn-outline" type="button" disabled>Retour arrière ↩️</button>
       <button id="stop-btn" class="btn btn-success" type="button"><span>S'arrêter 🙅🏻‍♂️<br>et passer au suivant ➡️</span></button>
     </div>
   </div>
@@ -167,6 +168,9 @@
       let currentPlayer = 0;
       let turnScore = 0;
       let turnThrows = 0;
+      // Stack of this turn's scoring actions, so a misclick can be undone
+      // without having to restart the whole turn.
+      let turnHistory = [];
 
       // Score threshold that starts the final round: once a player banks
       // 100+ points, every other player gets exactly one last turn to try
@@ -186,6 +190,7 @@
       const turnScoreValue = document.getElementById("turn-score-value");
       const stopTotalValue = document.getElementById("stop-total-value");
       const touchBtn = document.getElementById("touch-btn");
+      const undoBtn = document.getElementById("undo-btn");
       const stopBtn = document.getElementById("stop-btn");
       const turnModal = document.getElementById("turn-modal");
       const startTurnBtn = document.getElementById("start-turn-btn");
@@ -273,6 +278,7 @@
         turnThrowsValue.textContent = turnThrows;
         turnScoreValue.textContent = turnScore;
         stopTotalValue.textContent = totalFor(currentPlayer) + turnScore;
+        undoBtn.disabled = turnHistory.length === 0;
         finalRoundBanner.hidden = finalTurnsLeft === null;
         renderHeader();
         renderBody();
@@ -295,6 +301,7 @@
         rounds[currentRound][currentPlayer] = { score, throws: turnThrows };
         turnScore = 0;
         turnThrows = 0;
+        turnHistory = [];
 
         if (finalTurnsLeft === null) {
           if (totalFor(currentPlayer) >= WIN_THRESHOLD) {
@@ -353,15 +360,30 @@
           if (combo === "bons-flancs") {
             gameStats[currentPlayer][combo] += 2;
             turnScore += 1;
+            turnHistory.push({ throws: 1, score: 1, stats: [{ key: combo, delta: 2 }] });
             renderAll();
             return;
           }
 
           // bajoue / groin-groin / trotteur / tournedos: base value.
           gameStats[currentPlayer][combo]++;
-          turnScore += COMBI_BASE_POINTS[combo];
+          const points = COMBI_BASE_POINTS[combo];
+          turnScore += points;
+          turnHistory.push({ throws: 1, score: points, stats: [{ key: combo, delta: 1 }] });
           renderAll();
         });
+      });
+
+      undoBtn.addEventListener("click", () => {
+        const entry = turnHistory.pop();
+        if (!entry) return;
+        turnThrows -= entry.throws;
+        gameStats[currentPlayer].throws -= entry.throws;
+        turnScore -= entry.score;
+        entry.stats.forEach(({ key, delta }) => {
+          gameStats[currentPlayer][key] -= delta;
+        });
+        renderAll();
       });
 
       startTurnBtn.addEventListener("click", () => {
@@ -420,7 +442,15 @@
           combiModal.hidden = true;
 
           const sum = COMBI_BASE_POINTS[first.combo] + COMBI_BASE_POINTS[second.combo];
-          turnScore += first.combo === second.combo ? sum * 2 : sum;
+          const points = first.combo === second.combo ? sum * 2 : sum;
+          turnScore += points;
+          turnHistory.push({
+            throws: 1,
+            score: points,
+            stats: first.combo === second.combo
+              ? [{ key: first.combo, delta: 2 }]
+              : [{ key: first.combo, delta: 1 }, { key: second.combo, delta: 1 }],
+          });
           renderAll();
         });
       });
