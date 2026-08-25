@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="../style.css">
 </head>
 <body>
 
@@ -44,18 +44,23 @@
       </table>
     </div>
 
-    <a href="selection-des-joueurs.html" class="btn-outline">Nouvelle partie 🔁</a>
-    <a href="../../index.html" class="btn-outline">Retour au menu principal</a>
+    <a id="new-game-link" href="selection-des-joueurs.html" class="btn-outline">Nouvelle partie 🔁</a>
+    <a href="../index.html" class="btn-outline">Retour au menu principal</a>
 
   </div>
 
-  <script src="../../common.js"></script>
+  <script src="../common.js"></script>
   <script>
-    const results = JSON.parse(sessionStorage.getItem("cochons_sim_results") || "null");
+    const results = JSON.parse(sessionStorage.getItem("cochons_results") || "null");
+    const mode = new URLSearchParams(window.location.search).get("mode");
 
     if (!results) {
-      window.location.href = "selection-des-joueurs.html";
+      window.location.href = "selection-du-mode.html";
     } else {
+      if (mode === "compteur" || mode === "simulateur") {
+        document.getElementById("new-game-link").href = "selection-des-joueurs.html?mode=" + mode;
+      }
+
       const { players, totals, stats } = results;
 
       const scoreTab = document.getElementById("score-tab");

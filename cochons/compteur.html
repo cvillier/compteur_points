@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="../style.css">
 </head>
 <body>
 
@@ -62,49 +62,49 @@
       <div class="combo-grid">
         <button class="btn" data-combo="bons-flancs" type="button">
           <span class="combo-img-pair">
-            <img class="combo-img" src="../images/flanc-droit.png" alt="">
-            <img class="combo-img" src="../images/flanc-droit.png" alt="">
+            <img class="combo-img" src="images/flanc-droit.png" alt="">
+            <img class="combo-img" src="images/flanc-droit.png" alt="">
           </span>
           <span>Bons flancs</span>
         </button>
         <button class="btn" data-combo="mauvais-flancs" type="button">
           <span class="combo-img-pair">
-            <img class="combo-img" src="../images/flanc-droit.png" alt="">
-            <img class="combo-img" src="../images/flanc-gauche.png" alt="">
+            <img class="combo-img" src="images/flanc-droit.png" alt="">
+            <img class="combo-img" src="images/flanc-gauche.png" alt="">
           </span>
           <span>Mauvais flancs</span>
         </button>
         <button class="btn" data-combo="trotteur" type="button">
-          <img class="combo-img" src="../images/trotteur.png" alt="">
+          <img class="combo-img" src="images/trotteur.png" alt="">
           <span>Trotteur</span>
         </button>
         <button class="btn" data-combo="tournedos" type="button">
-          <img class="combo-img" src="../images/tournedos.png" alt="">
+          <img class="combo-img" src="images/tournedos.png" alt="">
           <span>Tournedos</span>
         </button>
         <button class="btn" data-combo="groin-groin" type="button">
-          <img class="combo-img" src="../images/groin-groin.png" alt="">
+          <img class="combo-img" src="images/groin-groin.png" alt="">
           <span>Groin-groin</span>
         </button>
         <button class="btn" data-combo="bajoue" type="button">
-          <img class="combo-img" src="../images/bajoue.png" alt="">
+          <img class="combo-img" src="images/bajoue.png" alt="">
           <span>Bajoue</span>
         </button>
         <button class="btn" id="combi-btn" type="button">
           <span class="combo-img-quad">
             <span class="combo-img-pair">
-              <img class="combo-img" src="../images/trotteur.png" alt="">
-              <img class="combo-img" src="../images/trotteur.png" alt="">
+              <img class="combo-img" src="images/trotteur.png" alt="">
+              <img class="combo-img" src="images/trotteur.png" alt="">
             </span>
             <span class="combo-img-pair">
-              <img class="combo-img" src="../images/trotteur.png" alt="">
-              <img class="combo-img" src="../images/tournedos.png" alt="">
+              <img class="combo-img" src="images/trotteur.png" alt="">
+              <img class="combo-img" src="images/tournedos.png" alt="">
             </span>
           </span>
           <span>Doubles et Combinaisons diverses</span>
         </button>
         <button class="btn btn-danger" id="touch-btn" type="button">
-          <img class="combo-img" src="../images/touche.png" alt="">
+          <img class="combo-img" src="images/touche.png" alt="">
           <span>Touché !!!</span>
         </button>
       </div>
@@ -131,19 +131,19 @@
 
       <div class="combo-grid">
         <button class="btn" data-combi="trotteur" type="button">
-          <img class="combo-img" src="../images/trotteur.png" alt="">
+          <img class="combo-img" src="images/trotteur.png" alt="">
           <span>Trotteur</span>
         </button>
         <button class="btn" data-combi="tournedos" type="button">
-          <img class="combo-img" src="../images/tournedos.png" alt="">
+          <img class="combo-img" src="images/tournedos.png" alt="">
           <span>Tournedos</span>
         </button>
         <button class="btn" data-combi="groin-groin" type="button">
-          <img class="combo-img" src="../images/groin-groin.png" alt="">
+          <img class="combo-img" src="images/groin-groin.png" alt="">
           <span>Groin-groin</span>
         </button>
         <button class="btn" data-combi="bajoue" type="button">
-          <img class="combo-img" src="../images/bajoue.png" alt="">
+          <img class="combo-img" src="images/bajoue.png" alt="">
           <span>Bajoue</span>
         </button>
       </div>
@@ -152,12 +152,12 @@
     </div>
   </div>
 
-  <script src="../../common.js"></script>
+  <script src="../common.js"></script>
   <script>
     const players = JSON.parse(sessionStorage.getItem("cochons_players") || "[]");
 
     if (players.length === 0) {
-      window.location.href = "selection-des-joueurs.html";
+      window.location.href = "selection-des-joueurs.html?mode=compteur";
     } else {
       function newRound() {
         return players.map(() => null);
@@ -335,7 +335,7 @@
           totals,
           stats: gameStats,
         }));
-        window.location.href = "resultats.html";
+        window.location.href = "resultats.html?mode=compteur";
       }
 
       // Base value from the reference card for a single pig position.
@@ -472,7 +472,7 @@
         quitModal.hidden = true;
       });
       document.getElementById("quit-yes").addEventListener("click", () => {
-        window.location.href = "../../index.html";
+        window.location.href = "../index.html";
       });
 
       renderAll();

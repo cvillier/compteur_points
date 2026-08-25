@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="../style.css">
 </head>
 <body>
 
@@ -71,12 +71,12 @@
     </div>
   </div>
 
-  <script src="../../common.js"></script>
+  <script src="../common.js"></script>
   <script>
-    const players = JSON.parse(sessionStorage.getItem("cochons_sim_players") || "[]");
+    const players = JSON.parse(sessionStorage.getItem("cochons_players") || "[]");
 
     if (players.length === 0) {
-      window.location.href = "selection-des-joueurs.html";
+      window.location.href = "selection-des-joueurs.html?mode=simulateur";
     } else {
       function newRound() {
         return players.map(() => null);
@@ -247,12 +247,12 @@
 
       function endGame() {
         const totals = players.map((name, p) => totalFor(p));
-        sessionStorage.setItem("cochons_sim_results", JSON.stringify({
+        sessionStorage.setItem("cochons_results", JSON.stringify({
           players,
           totals,
           stats: gameStats,
         }));
-        window.location.href = "resultats.html";
+        window.location.href = "resultats.html?mode=simulateur";
       }
 
       // Base value from the reference card for a single pig position.
@@ -267,13 +267,13 @@
         tournedos: "Tournedos",
       };
       const RESULT_IMAGES = {
-        bajoue: "../images/bajoue.png",
-        "groin-groin": "../images/groin-groin.png",
-        "flanc-droit": "../images/flanc-droit.png",
-        "flanc-gauche": "../images/flanc-gauche.png",
-        trotteur: "../images/trotteur.png",
-        tournedos: "../images/tournedos.png",
-        touche: "../images/touche.png",
+        bajoue: "images/bajoue.png",
+        "groin-groin": "images/groin-groin.png",
+        "flanc-droit": "images/flanc-droit.png",
+        "flanc-gauche": "images/flanc-gauche.png",
+        trotteur: "images/trotteur.png",
+        tournedos: "images/tournedos.png",
+        touche: "images/touche.png",
       };
       // Odds for a single pig's landing position (sums to exactly 100).
       const RESULT_WEIGHTS = [
@@ -450,7 +450,7 @@
         quitModal.hidden = true;
       });
       document.getElementById("quit-yes").addEventListener("click", () => {
-        window.location.href = "../../index.html";
+        window.location.href = "../index.html";
       });
 
       renderAll();
