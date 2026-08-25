@@ -698,6 +698,14 @@ h1 {
   display: none;
 }
 
+.modal-card form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+}
+
 .modal-card {
   position: relative;
   width: 100%;

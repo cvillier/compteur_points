@@ -65,9 +65,11 @@
       <button id="score-modal-close" class="modal-close" type="button" aria-label="Fermer">❌</button>
       <p class="turn-indicator">Score de ce tour pour <strong id="score-modal-name"></strong></p>
 
-      <input type="number" id="score-input" class="score-input score-input-big" step="1" value="0">
+      <form id="score-form">
+        <input type="number" id="score-input" class="score-input score-input-big" step="1" value="0">
 
-      <button id="score-validate-btn" class="btn" type="button">Valider ✅</button>
+        <button id="score-validate-btn" class="btn" type="submit">Valider ✅</button>
+      </form>
     </div>
   </div>
 
@@ -200,7 +202,8 @@
         scoreModal.hidden = true;
       });
 
-      document.getElementById("score-validate-btn").addEventListener("click", () => {
+      document.getElementById("score-form").addEventListener("submit", (e) => {
+        e.preventDefault();
         const score = Math.trunc(Number(scoreInput.value)) || 0;
         scoreModal.hidden = true;
         recordTurn(score);
